@@ -1,0 +1,50 @@
+function [rW,psnrwmf,msewmf,rate,images1] = extracting(images,WM)
+k=0.2;
+file = dir('E:\code_video_watermarking1\watermarkedframes\*.jpg');
+NF = length(file);
+images1 = cell(NF,1);
+
+parfor i = 1:NF
+    images1{i} = imread(fullfile('E:\code_video_watermarking1\watermarkedframes\',file(i).name));
+end
+for j=1:NF
+    %im1 = images1{1};
+    [wfA,wfH,wfV,wfD] = dwt2(images1{j},'haar');
+    alleA(:,:,j) = wfA;
+    alleH(:,:,j) = wfH;
+    alleV(:,:,j) = wfV;
+    alleD(:,:,j) = wfD;
+    [eU,eS,~] = svd(alleD(:,:,j));
+    alleU(:,:,j) = eU;
+    alleS(:,:,j) = eS;
+  %  alleV(:,:,j) = eV;
+    [cA,cH,cV,cD] = dwt2(images{j},'haar');
+    allcA(:,:,j) = cA;
+    allcH(:,:,j) = cH;
+    allcV(:,:,j) = cV;
+    allcD(:,:,j) = cD;
+    [U,S,V] = svd(allcD(:,:,j));
+    allU(:,:,j) = U;
+    allS(:,:,j) = S;
+    allV(:,:,j) = V;
+    W = imresize(WM,[360,204]);
+    W = rgb2gray(W);
+    [waA,waH,waV,waD] = dwt2(W,'haar');
+%     allwA(:,:,j) = waA;
+%     allwH(:,:,j) = waH;
+%     allWV(:,:,j) = waV;
+%     allwD(:,:,j) = waD;
+    [wU,wS,wV] = svd(waD);
+%     allwU(:,:,j) = wU;
+%     allwS(:,:,j) = wS;
+%     allwV(:,:,j) = wV;
+    s(:,:,j) = (wS - allS(:,:,j))/k;
+    wDd(:,:,j) = wU*s(:,:,j)*wV';
+   % rW(:,:,j) = idwt2(allwA(:,:,j),allwH(:,:,j),allWV(:,:,j),wDd(:,:,j),'haar');
+      rW(:,:,j) = idwt2(waA,waH,waV,wDd(:,:,j),'haar');
+      rW(:,:,j) = uint8(rW(:,:,j));
+      psnrwmf = psnr(images1{j},images{j});
+      msewmf = mse(images1{j},images{j});
+      [~,rate] = biterr(images1{j},images{j});
+end
+end
